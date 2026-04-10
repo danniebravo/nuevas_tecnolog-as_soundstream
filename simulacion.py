@@ -13,10 +13,10 @@ def generar_simulacion(numeroSimulaciones):
     for _ in range(numeroSimulaciones):
 
         simulacion={
-            "id":random.randint(200),
+            "id":random.randint(0,200),
             "servicio":random.choice(nombres),
             "costo":random.choice(costos),
-            "costo":random.choice(codigos),
+            "codigo":random.choice(codigos),
             "fecha":fechaInicio+timedelta(days=random.randint(0,60))
         }
 
