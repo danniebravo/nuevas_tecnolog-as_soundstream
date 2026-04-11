@@ -20,5 +20,5 @@ def generar_simulacion(numeroSimulaciones):
             "fecha":fechaInicio+timedelta(days=random.randint(0,60))
         }
 
-        simulaciones.add(simulacion)
+        simulaciones.append(simulacion)
     return simulaciones
