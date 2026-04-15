@@ -20,5 +20,18 @@ def generar_simulacion(numeroSimulaciones):
             "fecha":fechaInicio+timedelta(days=random.randint(0,60))
         }
 
+        #Inyectando errores controlados 
+        probabilidadError=random.random()
+        if(probabilidadError<0.2):
+            simulacion["id"]=None
+        elif(probabilidadError<0.4):
+            simulacion["servicio"]=random.choice(["clase de python","clase de ingles"])
+        elif(probabilidadError<0.5):
+            simulacion["costo"]=random.choice([0,-10000,None])
+        elif(probabilidadError<0.8):
+            simulacion["codigo"]=" "+simulacion["codigo"].upper()
+        elif(probabilidadError<0.9):
+            simulacion["fecha"]=None
+
         simulaciones.append(simulacion)
     return simulaciones
