@@ -2,46 +2,42 @@ import subprocess
 import sys
 import os
 
-# Proyecto Integrador - SoundStream
-# Menu interactivo para ver las simulaciones de cada tabla
-
 archivos = {
-    '1': ('Usuarios', 'utils/simulacion_usuarios.py'),
-    '2': ('Canciones', 'utils/simulacion_canciones.py'),
-    '3': ('Listas de Reproduccion', 'utils/simulacion_listas.py'),
-    '4': ('Canciones Favoritas', 'utils/simulacion_favoritas.py'),
-    '5': ('Lista Canciones', 'utils/simulacion_lista_canciones.py'),
-    '6': ('Artistas', 'utils/simulacion_artistas.py'),
-    '7': ('Generos', 'utils/simulacion_generos.py'),
+    '1': ('Usuarios',                'utils/simulacion_usuarios.py'),
+    '2': ('Canciones',               'utils/simulacion_canciones.py'),
+    '3': ('Listas de Reproduccion',  'utils/simulacion_listas.py'),
+    '4': ('Canciones Favoritas',     'utils/simulacion_favoritas.py'),
+    '5': ('Lista Canciones',         'utils/simulacion_lista_canciones.py'),
+    '6': ('Artistas',                'utils/simulacion_artistas.py'),
+    '7': ('Generos',                 'utils/simulacion_generos.py'),
 }
 
 while True:
+    os.system('cls' if os.name == 'nt' else 'clear')
+
     print()
-    print('#' * 50)
-    print('#  SOUNDSTREAM - Simulaciones con Pandas')
-    print('#  Proyecto Integrador - Daniela Bravo')
-    print('#' * 50)
+    print('  SOUNDSTREAM - Simulaciones de BD con Pandas')
+    print('  Materia:     Nuevas Tecnologias')
+    print('  Integrante:  Daniela Bravo')
+    print('  ' + '-' * 45)
+
     print()
     for key, (nombre, _) in archivos.items():
         print(f'  {key}. {nombre}')
-    print(f'  8. Ver todas')
+    print(f'  8. Ver todas las tablas')
     print(f'  0. Salir')
-    print()
 
-    opcion = input('Selecciona una opcion: ').strip()
+    opcion = input('\n  Selecciona una tabla: ').strip()
 
     if opcion == '0':
-        print('Saliendo...')
+        print('\n  Saliendo...\n')
         break
     elif opcion == '8':
         for key, (_, ruta) in archivos.items():
-            print()
             subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), ruta)])
     elif opcion in archivos:
-        nombre, ruta = archivos[opcion]
-        print()
-        subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), ruta)])
+        subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), archivos[opcion][1])])
     else:
-        print('Opcion no valida, intenta de nuevo.')
+        print('\n  Opcion no valida.')
 
-    input('\nPresiona Enter para volver al menu...')
+    input('\n  Enter para volver al menu...')

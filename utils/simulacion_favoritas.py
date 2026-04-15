@@ -1,18 +1,12 @@
 import pandas as pd
+from tabulate import tabulate
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
-pd.set_option('display.max_colwidth', 40)
 
 # =============================================
-# TABLA: CANCIONES_FAVORITAS (Tabla Pivote N:M)
+# TABLA: CANCIONES_FAVORITAS (Pivote N:M)
 # =============================================
-# Tabla pivote que registra la relacion N:M entre usuarios y canciones.
-# Permite a los usuarios marcar canciones como favoritas.
-#
-# Relaciones:
-# - N:1 con usuarios (FK a id_usuario)
-# - N:1 con canciones (FK a id_canciones)
 
 datos = {
     'id_usuario': [3, 3, 3, 4, 4, 5, 5, 5, 6, 8, 8, 9, 9, 9, 10, 10, 3, 4, 5, 6],
@@ -28,38 +22,107 @@ datos = {
     ])
 }
 
-df_favoritas = pd.DataFrame(datos)
+df = pd.DataFrame(datos)
 
-# --- Descripcion de la estructura ---
-descripcion = pd.DataFrame({
-    'Campo': ['id_usuario', 'id_cancion', 'fecha_me_gusta'],
-    'Tipo': ['INT (PK, FK)', 'INT (PK, FK)', 'DATETIME'],
-    'Descripcion': [
-        'ID del usuario que marco favorito',
-        'ID de la cancion marcada',
-        'Fecha y hora del me gusta'
-    ]
-})
 
-# --- Mostrar resultados ---
-print('=' * 70)
-print('TABLA: CANCIONES_FAVORITAS (Tabla Pivote N:M)')
-print('=' * 70)
+def t(dataframe, fmt='grid'):
+    print(tabulate(dataframe, headers='keys', tablefmt=fmt, showindex=False))
 
-print('\nEstructura de la tabla:')
-print(descripcion.to_string(index=False))
 
-print(f'\nTotal "me gusta": {len(df_favoritas)}')
-print(f'Usuarios que han dado like: {df_favoritas["id_usuario"].nunique()}')
-print(f'Canciones con al menos un like: {df_favoritas["id_cancion"].nunique()}')
+def ver_estructura():
+    print('\n  ESTRUCTURA DE LA TABLA')
+    t(pd.DataFrame({
+        'Campo': ['id_usuario', 'id_cancion', 'fecha_me_gusta'],
+        'Tipo': ['INT (PK, FK)', 'INT (PK, FK)', 'DATETIME'],
+        'Descripcion': ['Usuario que marco favorito', 'Cancion marcada', 'Fecha y hora del me gusta']
+    }))
 
-print('\nDatos simulados:')
-print(df_favoritas.to_string(index=False))
+def ver_datos():
+    print('\n  DATOS SIMULADOS')
+    vista = df.copy()
+    vista['fecha_me_gusta'] = vista['fecha_me_gusta'].dt.strftime('%Y-%m-%d %H:%M')
+    t(vista)
+    print(f'\n  Total registros: {len(df)}')
 
-print('\nCanciones mas gustadas (por id_cancion):')
-print(df_favoritas['id_cancion'].value_counts())
+def ver_tipos_y_forma():
+    print('\n  FORMA Y TIPOS (df.shape, df.dtypes)')
+    t(pd.DataFrame({'Filas': [df.shape[0]], 'Columnas': [df.shape[1]]}))
+    print()
+    t(df.dtypes.reset_index().rename(columns={'index': 'Columna', 0: 'Tipo'}))
 
-print('\nFavoritas por usuario (por id_usuario):')
-print(df_favoritas['id_usuario'].value_counts())
+def ver_describe():
+    print('\n  ESTADISTICAS DESCRIPTIVAS (df.describe)')
+    t(df.describe().reset_index().rename(columns={'index': 'Metrica'}))
 
-print(f'\nPromedio de favoritas por usuario: {len(df_favoritas) / df_favoritas["id_usuario"].nunique():.2f}')
+def ver_nulos():
+    print('\n  VALORES NULOS Y UNICOS (isnull, nunique)')
+    info = pd.DataFrame({'Columna': df.columns, 'Nulos': df.isnull().sum().values, 'Unicos': df.nunique().values})
+    t(info)
+
+def ver_rankings():
+    print('\n  CANCIONES MAS GUSTADAS (value_counts)')
+    vc = df['id_cancion'].value_counts().reset_index()
+    vc.columns = ['ID Cancion', 'Likes']
+    t(vc)
+    print('\n  USUARIOS CON MAS FAVORITAS (value_counts)')
+    vu = df['id_usuario'].value_counts().reset_index()
+    vu.columns = ['ID Usuario', 'Favoritas']
+    t(vu)
+
+def ver_agrupaciones():
+    print('\n  ESTADISTICAS POR USUARIO (df.groupby + agg)')
+    grupo = df.groupby('id_usuario').agg(
+        Total=('id_cancion', 'count'),
+        Primer_like=('fecha_me_gusta', 'min'),
+        Ultimo_like=('fecha_me_gusta', 'max')
+    ).reset_index()
+    grupo['Primer_like'] = grupo['Primer_like'].dt.strftime('%Y-%m-%d')
+    grupo['Ultimo_like'] = grupo['Ultimo_like'].dt.strftime('%Y-%m-%d')
+    grupo.columns = ['ID Usuario', 'Total', 'Primer Like', 'Ultimo Like']
+    t(grupo)
+    sizes = df.groupby('id_usuario').size()
+    print(f'\n  Promedio por usuario: {sizes.mean():.2f} | Max: {sizes.max()} | Min: {sizes.min()}')
+
+def ver_temporal():
+    print('\n  LIKES POR MES (dt.month_name)')
+    meses = df['fecha_me_gusta'].dt.month_name().value_counts().reset_index()
+    meses.columns = ['Mes', 'Likes']
+    t(meses)
+    print('\n  HORA MAS COMUN PARA DAR LIKE (dt.hour)')
+    horas = df['fecha_me_gusta'].dt.hour.value_counts().reset_index()
+    horas.columns = ['Hora', 'Likes']
+    t(horas.head())
+
+def ver_crosstab():
+    print('\n  TABLA CRUZADA: USUARIO vs CANCION (pd.crosstab)')
+    cross = pd.crosstab(df['id_usuario'], df['id_cancion'])
+    cross = cross.reset_index().rename(columns={'id_usuario': 'Usuario \\ Cancion'})
+    t(cross)
+
+opciones = {
+    '1': ('Estructura de la tabla', ver_estructura),
+    '2': ('Datos simulados', ver_datos),
+    '3': ('Forma y tipos (shape, dtypes)', ver_tipos_y_forma),
+    '4': ('Estadisticas descriptivas (describe)', ver_describe),
+    '5': ('Valores nulos y unicos (isnull, nunique)', ver_nulos),
+    '6': ('Rankings canciones/usuarios (value_counts)', ver_rankings),
+    '7': ('Agrupaciones por usuario (groupby, agg)', ver_agrupaciones),
+    '8': ('Analisis temporal (dt.month_name, dt.hour)', ver_temporal),
+    '9': ('Tabla cruzada (pd.crosstab)', ver_crosstab),
+}
+
+while True:
+    print()
+    print('  CANCIONES_FAVORITAS - Analisis disponibles')
+    print('  ' + '-' * 50)
+    for key, (nombre, _) in opciones.items():
+        print(f'  {key}. {nombre}')
+    print(f'  0. Ver todo')
+    print(f'  s. Salir')
+    opcion = input('\n  Selecciona: ').strip().lower()
+    if opcion == 's': break
+    elif opcion == '0':
+        for _, (_, func) in opciones.items(): func()
+    elif opcion in opciones: opciones[opcion][1]()
+    else: print('  Opcion no valida.')
+    input('\n  Enter para continuar...')

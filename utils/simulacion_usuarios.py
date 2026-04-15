@@ -1,19 +1,12 @@
 import pandas as pd
+from tabulate import tabulate
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
-pd.set_option('display.max_colwidth', 40)
 
 # =============================================
 # TABLA: USUARIOS
 # =============================================
-# Almacena la informacion de todos los usuarios registrados en SoundStream.
-# Cada usuario tiene rol ADMIN (gestiona catalogo) o USUARIO (escucha musica).
-#
-# Relaciones:
-# - 1:N con listas_reproduccion (un usuario crea muchas listas)
-# - 1:N con canciones via subido_por (un admin sube muchas canciones)
-# - N:M con canciones via canciones_favoritas
 
 datos = {
     'id_usuario': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -43,49 +36,139 @@ datos = {
     ])
 }
 
-df_usuarios = pd.DataFrame(datos)
+df = pd.DataFrame(datos)
 
-# --- Descripcion de la estructura ---
-descripcion = pd.DataFrame({
-    'Campo': ['id_usuario', 'nombre_usuario', 'correo', 'contrasena_hash',
-              'rol', 'imagen_perfil_url', 'activo', 'fecha_registro'],
-    'Tipo': ['INT (PK)', 'VARCHAR', 'VARCHAR', 'VARCHAR',
-             'ENUM', 'VARCHAR', 'BIT', 'DATETIME'],
-    'Descripcion': [
-        'Identificador unico del usuario',
-        'Nombre de usuario para login',
-        'Correo electronico unico',
-        'Contrasena encriptada con BCrypt',
-        'Rol: ADMIN o USUARIO',
-        'URL de la imagen de perfil',
-        'Indica si la cuenta esta activa',
-        'Fecha de creacion de la cuenta'
-    ]
-})
 
-# --- Mostrar resultados ---
-print('=' * 70)
-print('TABLA: USUARIOS')
-print('=' * 70)
+def t(dataframe, fmt='grid'):
+    """Imprime un DataFrame como tabla bonita."""
+    print(tabulate(dataframe, headers='keys', tablefmt=fmt, showindex=False))
 
-print('\nEstructura de la tabla:')
-print(descripcion.to_string(index=False))
 
-print(f'\nTotal registros: {len(df_usuarios)}')
-print(f'Admins: {(df_usuarios["rol"] == "ADMIN").sum()} | Usuarios: {(df_usuarios["rol"] == "USUARIO").sum()}')
-print(f'Activos: {df_usuarios["activo"].sum()} | Inactivos: {(~df_usuarios["activo"]).sum()}')
+def ver_estructura():
+    print('\n  ESTRUCTURA DE LA TABLA')
+    t(pd.DataFrame({
+        'Campo': ['id_usuario', 'nombre_usuario', 'correo', 'contrasena_hash',
+                  'rol', 'imagen_perfil_url', 'activo', 'fecha_registro'],
+        'Tipo': ['INT (PK)', 'VARCHAR', 'VARCHAR', 'VARCHAR',
+                 'ENUM', 'VARCHAR', 'BIT', 'DATETIME'],
+        'Descripcion': [
+            'Identificador unico del usuario', 'Nombre de usuario para login',
+            'Correo electronico unico', 'Contrasena encriptada (BCrypt)',
+            'Rol: ADMIN o USUARIO', 'URL imagen de perfil',
+            'Cuenta activa o no', 'Fecha de creacion de cuenta'
+        ]
+    }))
+    print('\n  RELACIONES')
+    t(pd.DataFrame({
+        'Relacion': ['usuarios -> listas_reproduccion', 'usuarios -> canciones', 'usuarios <-> canciones'],
+        'Tipo': ['1:N', '1:N', 'N:M'],
+        'Descripcion': ['Un usuario crea muchas listas', 'Un admin sube muchas canciones', 'Favoritos via canciones_favoritas']
+    }))
 
-print('\nDatos simulados:')
-print(df_usuarios.to_string(index=False))
 
-print('\nTipos de datos:')
-print(df_usuarios.dtypes)
+def ver_datos():
+    print('\n  DATOS SIMULADOS')
+    vista = df[['id_usuario', 'nombre_usuario', 'correo', 'rol', 'activo', 'fecha_registro']].copy()
+    vista['fecha_registro'] = vista['fecha_registro'].dt.strftime('%Y-%m-%d %H:%M')
+    t(vista)
+    print(f'\n  Total registros: {len(df)}')
 
-print('\nValores nulos por columna:')
-print(df_usuarios.isnull().sum())
 
-print('\nDistribucion de roles:')
-print(df_usuarios['rol'].value_counts())
+def ver_tipos_y_forma():
+    print('\n  FORMA DEL DATAFRAME (df.shape)')
+    t(pd.DataFrame({'Filas': [df.shape[0]], 'Columnas': [df.shape[1]]}))
+    print('\n  TIPOS DE DATOS (df.dtypes)')
+    t(df.dtypes.reset_index().rename(columns={'index': 'Columna', 0: 'Tipo'}))
 
-print(f'\nPrimer registro: {df_usuarios["fecha_registro"].min()}')
-print(f'Ultimo registro: {df_usuarios["fecha_registro"].max()}')
+
+def ver_describe():
+    print('\n  ESTADISTICAS DESCRIPTIVAS (df.describe)')
+    desc = df.describe(include='all').reset_index().rename(columns={'index': 'Metrica'})
+    t(desc)
+
+
+def ver_nulos():
+    print('\n  VALORES NULOS (df.isnull().sum())')
+    nulos = df.isnull().sum().reset_index().rename(columns={'index': 'Columna', 0: 'Nulos'})
+    nulos['Porcentaje'] = (nulos['Nulos'] / len(df) * 100).map(lambda x: f'{x:.0f}%')
+    t(nulos)
+    print('\n  USUARIOS SIN IMAGEN DE PERFIL')
+    t(df[df['imagen_perfil_url'].isnull()][['id_usuario', 'nombre_usuario']])
+
+
+def ver_distribucion_roles():
+    print('\n  DISTRIBUCION DE ROLES (value_counts)')
+    vc = df['rol'].value_counts().reset_index()
+    vc.columns = ['Rol', 'Cantidad']
+    vc['Porcentaje'] = (vc['Cantidad'] / len(df) * 100).map(lambda x: f'{x:.0f}%')
+    t(vc)
+
+
+def ver_filtrados():
+    print('\n  FILTRADO: SOLO ADMINISTRADORES')
+    t(df[df['rol'] == 'ADMIN'][['id_usuario', 'nombre_usuario', 'correo']])
+    print('\n  FILTRADO: USUARIOS INACTIVOS')
+    inactivos = df[df['activo'] == False][['id_usuario', 'nombre_usuario', 'rol']]
+    if len(inactivos) > 0:
+        t(inactivos)
+    else:
+        print('  Todos los usuarios estan activos')
+    print('\n  FILTRADO: REGISTRADOS DESPUES DE MARZO 2026 (df.query)')
+    recientes = df.query('fecha_registro >= "2026-03-01"')[['id_usuario', 'nombre_usuario', 'fecha_registro']].copy()
+    recientes['fecha_registro'] = recientes['fecha_registro'].dt.strftime('%Y-%m-%d %H:%M')
+    t(recientes)
+
+
+def ver_agrupaciones():
+    print('\n  AGRUPACION POR ROL Y ESTADO (df.groupby)')
+    grupo = df.groupby(['rol', 'activo']).size().reset_index(name='Cantidad')
+    t(grupo)
+    print('\n  DOMINIOS DE CORREO (str.split + value_counts)')
+    dominios = df['correo'].str.split('@').str[1].value_counts().reset_index()
+    dominios.columns = ['Dominio', 'Cantidad']
+    t(dominios)
+
+
+def ver_ordenamiento():
+    print('\n  ORDENAMIENTO POR FECHA (df.sort_values)')
+    orden = df.sort_values('fecha_registro', ascending=False)[['nombre_usuario', 'rol', 'fecha_registro']].copy()
+    orden['fecha_registro'] = orden['fecha_registro'].dt.strftime('%Y-%m-%d %H:%M')
+    t(orden)
+    print(f'\n  Primer registro: {df["fecha_registro"].min().strftime("%Y-%m-%d")}')
+    print(f'  Ultimo registro: {df["fecha_registro"].max().strftime("%Y-%m-%d")}')
+
+
+opciones = {
+    '1': ('Estructura de la tabla', ver_estructura),
+    '2': ('Datos simulados', ver_datos),
+    '3': ('Forma y tipos (shape, dtypes)', ver_tipos_y_forma),
+    '4': ('Estadisticas descriptivas (describe)', ver_describe),
+    '5': ('Valores nulos (isnull)', ver_nulos),
+    '6': ('Distribucion de roles (value_counts)', ver_distribucion_roles),
+    '7': ('Filtrados (activos, admins, query)', ver_filtrados),
+    '8': ('Agrupaciones (groupby, str.split)', ver_agrupaciones),
+    '9': ('Ordenamiento por fecha (sort_values)', ver_ordenamiento),
+}
+
+while True:
+    print()
+    print('  USUARIOS - Analisis disponibles')
+    print('  ' + '-' * 45)
+    for key, (nombre, _) in opciones.items():
+        print(f'  {key}. {nombre}')
+    print(f'  0. Ver todo')
+    print(f'  s. Salir')
+
+    opcion = input('\n  Selecciona: ').strip().lower()
+
+    if opcion == 's':
+        break
+    elif opcion == '0':
+        for _, (_, func) in opciones.items():
+            func()
+    elif opcion in opciones:
+        opciones[opcion][1]()
+    else:
+        print('  Opcion no valida.')
+
+    input('\n  Enter para continuar...')
