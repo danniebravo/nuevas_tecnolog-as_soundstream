@@ -1,6 +1,14 @@
 import pandas as pd
-from utils.simulacion import generar_simulacion
 
-simulaciones=generar_simulacion(100000)
+from utils.simulacion import generar_simulacion
+from notebook.limpieza import limpiar_datos
+
+#Llamando a las rutinas de simulacion
+simulaciones=generar_simulacion(10)
+
+#Llamando a pandas para crear data frames de los datos de entrada
 simulaciones_ordenadas=pd.DataFrame(simulaciones)
-print(simulaciones_ordenadas)
+
+#LLamando a la rutina de limpieza
+simulaciones_limpias=limpiar_datos(simulaciones_ordenadas)
+print(simulaciones_limpias)
