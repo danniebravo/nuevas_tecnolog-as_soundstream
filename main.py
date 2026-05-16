@@ -1,23 +1,17 @@
 import pandas as pd
 
-#zona para importar simulaciones
-from utils.simulacion import generar_simulacion
-
-#zona para importar limpiezas
+from notebook.consumo import consumir_servicios
 from notebook.limpieza import limpiar_datos
+from notebook.transformacion import transformar_datos
 
-#zona para importar descripciones
-from notebook.descripcion import describir_datos
+datos_tabla_servicios=consumir_servicios()
+data_frame_servicios=pd.DataFrame(datos_tabla_servicios)
+data_frame_limpio_servicios=limpiar_datos(data_frame_servicios)
+agrupaciones=transformar_datos(data_frame_limpio_servicios)
+print(agrupaciones)
 
-#Creando las simulaciones
-simulaciones=generar_simulacion(10)
 
-#Ordenando las simulaciones
-simulaciones_ordenadas=pd.DataFrame(simulaciones)
 
-#limpiando el set de datos
-simulaciones_limpias=limpiar_datos(simulaciones_ordenadas)
 
-#describiendo los datos
-describir_datos(simulaciones_limpias)
+
 
