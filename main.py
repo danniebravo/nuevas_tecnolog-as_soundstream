@@ -1,51 +1,80 @@
 import pandas as pd
-
 from notebook.consumo import consumir_servicios
 from notebook.limpieza import limpiar_datos
+from notebook.descripcion import describir_datos
 from notebook.transformacion import transformar_datos
-from notebook.graficacion import graficar_lineas, graficar_barras, graficar_torta, graficar_mapa_calor
-
-datos_tabla_servicios=consumir_servicios()
-data_frame_servicios=pd.DataFrame(datos_tabla_servicios)
-data_frame_limpio_servicios=limpiar_datos(data_frame_servicios)
-agrupaciones=transformar_datos(data_frame_limpio_servicios)
-
-# Gráfico de líneas: esterilizaciones por fecha
-graficar_lineas(
-    agrupaciones["agrupacion1"],
-    columna_eje_x="fecha",
-    columna_eje_y="conteo",
-    titulo="Esterilizaciones por fecha",
-    color_linea="#2196F3",
-    nombre_archivo="lineas_esterilizaciones.png"
+from notebook.graficacion import (
+    graficar_lineas,
+    graficar_barras,
+    graficar_torta,
+    graficar_mapa_calor
 )
 
-# Gráfico de barras: servicios con costo >= 250.000
-graficar_barras(
-    agrupaciones["agrupacion2"],
-    columna_categorias="servicio",
-    columna_valores="conteo",
-    titulo="Servicios con costo mayor o igual a 250.000",
-    color_barras="#4CAF50",
-    nombre_archivo="barras_servicios.png"
-)
+def ejecutar_analisis():
+    # 1. Consumo
+    print("→ Consumiendo datos...")
+    datos_crudos = consumir_servicios(500)
+    data_frame = pd.DataFrame(datos_crudos)
 
-# Gráfico de torta: proporción de servicios costosos
-graficar_torta(
-    agrupaciones["agrupacion2"],
-    columna_etiquetas="servicio",
-    columna_valores="conteo",
-    titulo="Proporción de servicios con costo alto",
-    nombre_archivo="torta_servicios.png"
-)
+    # 2. Limpieza
+    print("→ Limpiando datos...")
+    data_frame_limpio = limpiar_datos(data_frame)
 
-# Mapa de calor: cantidad de registros por servicio vs código
-graficar_mapa_calor(
-    agrupaciones["agrupacion3"],
-    columna_filas="servicio",
-    columna_columnas="codigo",
-    columna_valores="conteo",
-    titulo="Cantidad de servicios por tipo y código",
-    paleta_color="YlOrRd",
-    nombre_archivo="mapa_calor_servicio_codigo.png"
-)
+    # 3. Descripción
+    print("→ Describiendo dataset...")
+    describir_datos(data_frame_limpio)
+
+    # 4. Transformación
+    print("→ Transformando datos...")
+    resultados = transformar_datos(data_frame_limpio)
+
+    # 5. Graficación
+    print("→ Generando gráficos...")
+
+    graficar_lineas(
+        resultados["agrupacion1"],
+        columna_eje_x="fecha",
+        columna_eje_y="conteo",
+        titulo="Reproducciones de Bohemian Rhapsody por fecha",
+        nombre_archivo="lineas_bohemian_por_fecha.png"
+    )
+
+    graficar_barras(
+        resultados["agrupacion2"],
+        columna_categorias="artistName",
+        columna_valores="conteo",
+        titulo="Total de reproducciones por artista",
+        nombre_archivo="barras_reproducciones_por_artista.png"
+    )
+
+    graficar_torta(
+        resultados["agrupacion3"],
+        columna_etiquetas="trackName",
+        columna_valores="minutos_totales",
+        titulo="Distribución de minutos totales escuchados por canción",
+        nombre_archivo="torta_minutos_por_cancion.png"
+    )
+
+    graficar_barras(
+        resultados["agrupacion4"],
+        columna_categorias="artistName",
+        columna_valores="conteo",
+        titulo="Reproducciones de canciones largas (más de 4 min) por artista",
+        color_barras="#9C27B0",
+        nombre_archivo="barras_canciones_largas_por_artista.png"
+    )
+
+    graficar_mapa_calor(
+        resultados["agrupacion5"],
+        columna_filas="artistName",
+        columna_columnas="trackName",
+        columna_valores="conteo",
+        titulo="Mapa de calor: artista vs canción",
+        nombre_archivo="mapa_calor_artista_cancion.png"
+    )
+
+    print("\n✓ Análisis completado.")
+    print("✓ Gráficos guardados en: Sound_Stream/src/assets/graficos/")
+
+if __name__ == "__main__":
+    ejecutar_analisis()

@@ -5,9 +5,10 @@ import seaborn as sns
 # Se importa os para manejar rutas y crear carpetas
 import os
 
-# Ruta típica de la carpeta assets en un proyecto React con Vite
-RUTA_ASSETS = os.path.join(os.path.dirname(__file__), "..", "..", "mi-app-react", "src", "assets", "graficos")
-
+# Ruta absoluta al frontend Sound_Stream, hermano de NuevasTecnologias
+RUTA_ASSETS = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "Sound_Stream", "src", "assets", "graficos"
+)
 
 def crear_ruta_si_no_existe(ruta_destino):
     # Se crea la carpeta destino en caso de que aún no exista
